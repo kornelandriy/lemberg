@@ -1,37 +1,52 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+using lemberg.Attributes;
+using lemberg.Helpers;
 using lemberg.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace lemberg.Controllers
 {
+    [ExceptionFilter]
     public class HomeController : Controller
     {
-        public IActionResult Index()
+        private readonly AppDbContext context;
+        private readonly int pageSize;
+
+        public HomeController(AppDbContext context)
         {
-            return View();
+            this.context = context;
+            pageSize = 10;
         }
 
-        public IActionResult About()
-        {
-            ViewData["Message"] = "Your application description page.";
+        private int TotalPages { get; set; }
 
-            return View();
+        [HttpGet]
+        public async Task<IActionResult> Index(int pageIndex = 1, string sortBy = "")
+        {
+            var peoples = await context.Peoples.Include("Mark").ToListAsync();
+            TotalPages = (int) Math.Ceiling(decimal.Divide(peoples.Count, pageSize));
+            var page = peoples.GetPage(pageIndex, pageSize);
+
+            ViewData["currentPage"] = pageIndex;
+            ViewData["totalPages"] = TotalPages;
+
+            return View(page.Order(sortBy));
         }
 
-        public IActionResult Contact()
+        [HttpPost]
+        public async Task<IActionResult> Index(PersonViewModel personVM)
         {
-            ViewData["Message"] = "Your contact page.";
+            if (ModelState.IsValid) await personVM.AddToDatabase(context);
 
-            return View();
+            return RedirectToAction("Index", new {pageIndex = personVM.ReturnPage});
         }
 
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return View(new ErrorViewModel {RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier});
         }
     }
 }

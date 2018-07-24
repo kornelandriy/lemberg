@@ -1,5 +1,3 @@
-using System;
-
 namespace lemberg.Models
 {
     public class ErrorViewModel
