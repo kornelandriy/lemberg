@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace lemberg.Controllers
 {
-    [ExceptionFilter]
     public class HomeController : Controller
     {
         private readonly AppDbContext context;
@@ -37,6 +36,7 @@ namespace lemberg.Controllers
         }
 
         [HttpPost]
+        [ExceptionHandler]
         public async Task<IActionResult> Index(PersonViewModel personVM)
         {
             if (ModelState.IsValid) await personVM.AddToDatabase(context);
